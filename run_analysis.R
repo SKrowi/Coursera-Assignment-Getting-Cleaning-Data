@@ -69,6 +69,8 @@ glimpse(df_tidy_summarized)
 # 03 Data Export ####
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 write.table(df_tidy_summarized, "DataTidySummarized.txt", row.names = FALSE)
+write.csv2(df_tidy_summarized, file = "DataTidySummarized.csv", row.names = FALSE, na = "") # as csv
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 04 Cleaning Environment ####
