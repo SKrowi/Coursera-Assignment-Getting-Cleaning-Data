@@ -17,7 +17,6 @@ y_test <- read.table("UCI HAR Dataset/test/y_test.txt", col.names = "code")
 subject_train <- read.table("UCI HAR Dataset/train/subject_train.txt", col.names = "subject")
 subject_test <- read.table("UCI HAR Dataset/test/subject_test.txt", col.names = "subject")
 
-
 df_x <- rbind(x_train, x_test)
 df_y <- rbind(y_train, y_test)
 df_subject <- rbind(subject_train, subject_test)
