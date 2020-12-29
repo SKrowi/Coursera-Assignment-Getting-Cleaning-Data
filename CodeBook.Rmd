@@ -1,13 +1,25 @@
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 01 Downloading Data ####
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-library(tidyverse)
+---
+title: "Code Book: Getting and Cleaning "
+output: html_notebook
+---
+**The script run_analysis.R performs the following steps**
 
+# 1. Downloading Data
+
+Under the given link, the file Coursera_DS3_Final.zip is being downloaded and unziped.
+
+```{r Downloading Data}
 URL <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
 file <- "Coursera_DS3_Final.zip"
 download.file(URL, file, method = "curl")
 unzip(file)
+```
 
+# 2. Organizing Data into data Frames
+
+The distinct data sets are moved into respective containers
+
+```{r Oragnizing DF}
 features <- read.table("UCI HAR Dataset/features.txt", col.names = c("n","functions"))
 activities <- read.table("UCI HAR Dataset/activity_labels.txt", col.names = c("code", "activity"))
 x_train <- read.table("UCI HAR Dataset/train/X_train.txt", col.names = features$functions)
@@ -16,27 +28,50 @@ x_test <- read.table("UCI HAR Dataset/test/X_test.txt", col.names = features$fun
 y_test <- read.table("UCI HAR Dataset/test/y_test.txt", col.names = "code")
 subject_train <- read.table("UCI HAR Dataset/train/subject_train.txt", col.names = "subject")
 subject_test <- read.table("UCI HAR Dataset/test/subject_test.txt", col.names = "subject")
+```
 
+# 3. Merging Data
+
+The data frames are being merged and the separate df which will not be used again will be removed from the working environment
+
+```{r Merging Data}
 df_x <- rbind(x_train, x_test)
 df_y <- rbind(y_train, y_test)
 df_subject <- rbind(subject_train, subject_test)
 df_full <- cbind(df_subject, df_y, df_x) # uniting one data frame
 
 rm(features, x_train, y_train, x_test, y_test, subject_train, subject_test, df_x, df_y, df_subject)
+```
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 02 Cleaning Data ####
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-glimpse(df_full)
+# 4. Cleaning the Data Frame
 
+Only the relevant columns subject and actvity (together identifying what an anonymized individual did) and columns whit "mean" or "std" (standard deviation) are kept. A left join with the dataframe (on the variable "code") is used for adding the text, writing which activity has been conducted
+
+```{r Cleaning the DF}
 df_tidy <- df_full %>%
   select(subject, code, contains("mean"), contains("std")) %>% # only  measurements on mean and standard deviation
   left_join(activities) %>% # joining descriptive activity names to name activities in data set
   select(subject, activity, everything()) %>% # results in a diff. variable arrangement
   within(rm(code)) # removal of activity code
+```
 
-glimpse(df_tidy)
+# 5. Cleaning Column Names
 
+Column names are being cleaned for the following flaws i.o. to achieve better readability:
+
+- Starting w/ character t becomes Time_  
+- Starting w/ character f becomes Frequency_  
+- Acc becomes Accelerometer  
+- Gyro becomes Gyroscope  
+- Mag becomes Magnitude  
+- -mean- becomes _Mean  
+- -std- becomes _StandardDeviation
+- The caracter - becomes _
+- angle becomes Angle
+- freq becomes Frequency
+- gravity becomes Gravity
+
+```{r Cleaning Column Names}
 new_name <- names(df_tidy) # cleaning variable names
 new_name <- gsub("[(][)]", "", new_name)
 new_name <- gsub("^t", "Time_", new_name)
@@ -51,26 +86,23 @@ new_name <- gsub("angle", "Angle", new_name)
 new_name <- gsub("-freq()", "Frequency", new_name, ignore.case = TRUE)
 new_name <- gsub("gravity", "Gravity", new_name)
 names(df_tidy) <- new_name
+```
 
-colnames(df_tidy)
+The resulting data frame has got `r nrow(df_tidy)`  observations of `r ncol(df_tidy)`  variables and the column names are: `r colnames(df_tidy)`
 
-# independent tidy data set with the average of each variable for each activity and subject 
 
+# 6. Separate Data Frame w/ Summary 
+
+In order to receive a summary data frame, the data is grouped by subject and activity and then summarized at all other columns in the data frame. The function applied for retrieving the column-wise average is *mean* and the new columns receive the name extension *GroupMean*. 
+
+```{r Separate DF}
 df_tidy_summarized <- df_tidy %>%
   group_by(subject, activity) %>% 
   summarise_at(.vars = names(.)[3:88],
                .funs = c(GroupMean = "mean"))
+```
 
-glimpse(df_tidy_summarized)
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 03 Data Export ####
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-write.table(df_tidy_summarized, "DataTidySummarized.txt", row.names = FALSE)
-write.csv2(df_tidy_summarized, file = "DataTidySummarized.csv", row.names = FALSE, na = "") # as csv
+The resulting data frame has got `r nrow(df_tidy_summarized)` observations and `r ncol(df_tidy_summarized)` variables.
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 04 Cleaning Environment ####
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-rm(list = ls())
+
